@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/database/database.dart';
+import '../../core/models/word.dart';
 import '../../shared/providers/database_providers.dart';
 
 enum _QuizMode { multipleChoice, typeTheWord }
@@ -32,7 +32,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   }
 
   Future<void> _loadWords() async {
-    final words = await ref.read(databaseProvider).wordDao.getAllWords();
+    final words = ref.read(storageProvider).getAllWords();
     setState(() {
       _allWords = words;
       _loading = false;

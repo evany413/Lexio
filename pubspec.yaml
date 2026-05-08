@@ -15,9 +15,7 @@ dependencies:
   flutter_riverpod: ^2.5.1
 
   # Database
-  drift: ^2.20.2
-  drift_flutter: ^0.2.1
-  sqlite3_flutter_libs: ^0.5.25
+  hive_flutter: ^1.1.0
 
   # Navigation
   go_router: ^14.3.0
@@ -46,7 +44,6 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^4.0.0
   build_runner: ^2.4.12
-  drift_dev: ^2.20.2
 
 flutter:
   uses-material-design: true

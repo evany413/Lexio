@@ -1,10 +1,8 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/services/ai/ai_provider.dart';
 import '../../core/services/csv_service.dart';
-import '../../core/database/database.dart';
 import '../../shared/providers/ai_providers.dart';
 import '../../shared/providers/database_providers.dart';
 
@@ -19,7 +17,6 @@ class SettingsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
-          // AI Provider Section
           _SectionHeader(title: 'AI Provider'),
           aiSettings.when(
             data: (settings) => ListTile(
@@ -36,7 +33,6 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const Divider(),
 
-          // Data Section
           _SectionHeader(title: 'Vocabulary Data'),
           ListTile(
             leading: const Icon(Icons.upload_outlined),
@@ -52,14 +48,12 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const Divider(),
 
-          // Danger Zone
           _SectionHeader(title: 'Data Management'),
           ListTile(
             leading: Icon(Icons.delete_forever_outlined,
                 color: Theme.of(context).colorScheme.error),
             title: Text('Clear All Words',
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.error)),
+                style: TextStyle(color: Theme.of(context).colorScheme.error)),
             subtitle: const Text('Permanently delete all words and review history'),
             onTap: () => _confirmClearAll(context, ref),
           ),
@@ -67,14 +61,12 @@ class SettingsScreen extends ConsumerWidget {
             leading: Icon(Icons.logout_outlined,
                 color: Theme.of(context).colorScheme.error),
             title: Text('Remove API Key',
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.error)),
+                style: TextStyle(color: Theme.of(context).colorScheme.error)),
             subtitle: const Text('Go back to onboarding'),
             onTap: () => _confirmRemoveKey(context, ref),
           ),
           const Divider(),
 
-          // About
           _SectionHeader(title: 'About'),
           const ListTile(
             leading: Icon(Icons.auto_stories_outlined),
@@ -88,7 +80,7 @@ class SettingsScreen extends ConsumerWidget {
 
   Future<void> _export(BuildContext context, WidgetRef ref) async {
     try {
-      final words = await ref.read(databaseProvider).wordDao.getAllWords();
+      final words = ref.read(storageProvider).getAllWords();
       if (words.isEmpty) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -117,25 +109,20 @@ class SettingsScreen extends ConsumerWidget {
       final rows = await CSVService.importWords();
       if (rows.isEmpty) return;
 
-      final dao = ref.read(databaseProvider).wordDao;
+      final storage = ref.read(storageProvider);
       int added = 0;
       for (final row in rows) {
         final word = row['word']?.trim();
         if (word == null || word.isEmpty) continue;
 
-        final status = ['active', 'mastered', 'achieved'].contains(row['status'])
-            ? row['status']!
-            : 'active';
-
-        await dao.insertWord(WordsCompanion(
-          word: Value(word),
-          type: Value(row['type']?.isEmpty == true ? null : row['type']),
-          pronunciation: Value(row['pronunciation']?.isEmpty == true ? null : row['pronunciation']),
-          meaning: Value(row['meaning']?.isEmpty == true ? null : row['meaning']),
-          usageExample: Value(row['usage_example']?.isEmpty == true ? null : row['usage_example']),
-          synonym: Value(row['synonym']?.isEmpty == true ? null : row['synonym']),
-          status: Value(status),
-        ));
+        await storage.insertWord(
+          word: word,
+          type: row['type']?.isEmpty == true ? null : row['type'],
+          pronunciation: row['pronunciation']?.isEmpty == true ? null : row['pronunciation'],
+          meaning: row['meaning']?.isEmpty == true ? null : row['meaning'],
+          usageExample: row['usage_example']?.isEmpty == true ? null : row['usage_example'],
+          synonym: row['synonym']?.isEmpty == true ? null : row['synonym'],
+        );
         added++;
       }
 
@@ -172,9 +159,10 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
     if (ok == true) {
-      final db = ref.read(databaseProvider);
-      await db.delete(db.reviewLogs).go();
-      await db.delete(db.words).go();
+      final storage = ref.read(storageProvider);
+      for (final word in storage.getAllWords()) {
+        await storage.deleteWord(word.id);
+      }
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('All words deleted.')),

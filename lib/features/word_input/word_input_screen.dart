@@ -1,7 +1,5 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/database/database.dart';
 import '../../core/services/ai/ai_provider.dart';
 import '../../shared/providers/ai_providers.dart';
 import '../../shared/providers/database_providers.dart';
@@ -73,25 +71,20 @@ class _WordInputScreenState extends ConsumerState<WordInputScreen> {
         final info = await ai.enrichWord(entry.suggestion.word);
         await insertWord(
           ref,
-          WordsCompanion(
-            word: Value(info.word.isEmpty ? entry.suggestion.word : info.word),
-            type: Value(info.type),
-            pronunciation: Value(info.pronunciation),
-            meaning: Value(info.meaning),
-            usageExample: Value(info.usageExample),
-            synonym: Value(info.synonym),
-            nextReviewAt: Value(DateTime.now().add(const Duration(days: 1))),
-          ),
+          word: info.word.isEmpty ? entry.suggestion.word : info.word,
+          type: info.type,
+          pronunciation: info.pronunciation,
+          meaning: info.meaning,
+          usageExample: info.usageExample,
+          synonym: info.synonym,
+          nextReviewAt: DateTime.now().add(const Duration(days: 1)),
         );
         added++;
       } catch (_) {
-        // Add with minimal info if enrichment fails
         await insertWord(
           ref,
-          WordsCompanion(
-            word: Value(entry.suggestion.word),
-            nextReviewAt: Value(DateTime.now().add(const Duration(days: 1))),
-          ),
+          word: entry.suggestion.word,
+          nextReviewAt: DateTime.now().add(const Duration(days: 1)),
         );
         added++;
       }

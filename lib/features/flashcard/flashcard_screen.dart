@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/database/database.dart';
+import '../../core/models/word.dart';
 import '../../shared/providers/database_providers.dart';
 
 class FlashcardScreen extends ConsumerStatefulWidget {
@@ -35,8 +35,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen>
   }
 
   Future<void> _loadWords() async {
-    final words =
-        await ref.read(databaseProvider).wordDao.getDueWords();
+    final words = ref.read(storageProvider).getDueWords();
     setState(() {
       _words = words..shuffle(Random());
       _loading = false;

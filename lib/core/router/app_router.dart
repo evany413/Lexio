@@ -6,7 +6,6 @@ import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/word_input/word_input_screen.dart';
 import '../../features/word_list/word_list_screen.dart';
-import '../../features/word_detail/word_detail_screen.dart';
 import '../../features/flashcard/flashcard_screen.dart';
 import '../../features/quiz/quiz_screen.dart';
 import '../../features/settings/settings_screen.dart';
@@ -51,12 +50,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/words',
         builder: (_, __) => const WordListScreen(),
-      ),
-      GoRoute(
-        path: '/words/:id',
-        builder: (_, state) => WordDetailScreen(
-          wordId: int.parse(state.pathParameters['id']!),
-        ),
       ),
       GoRoute(
         path: '/flashcard',

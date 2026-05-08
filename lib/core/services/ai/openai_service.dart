@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'ai_provider.dart';
 
 class OpenAIService implements AIProvider {
@@ -17,15 +18,21 @@ class OpenAIService implements AIProvider {
         ));
 
   Future<String> _chat(String systemPrompt, String userMessage) async {
-    final res = await _dio.post('/v1/chat/completions', data: {
-      'model': 'gpt-4o',
-      'response_format': {'type': 'json_object'},
-      'messages': [
-        {'role': 'system', 'content': systemPrompt},
-        {'role': 'user', 'content': userMessage},
-      ],
-    });
-    return res.data['choices'][0]['message']['content'] as String;
+    try {
+      final res = await _dio.post('/v1/chat/completions', data: {
+        'model': 'gpt-4o',
+        'response_format': {'type': 'json_object'},
+        'messages': [
+          {'role': 'system', 'content': systemPrompt},
+          {'role': 'user', 'content': userMessage},
+        ],
+      });
+      return res.data['choices'][0]['message']['content'] as String;
+    } catch (e, st) {
+      debugPrint('[OpenAIService] Error: $e');
+      debugPrint('[OpenAIService] Stack: $st');
+      rethrow;
+    }
   }
 
   @override

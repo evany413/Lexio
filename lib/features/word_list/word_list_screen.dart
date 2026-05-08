@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/database/database.dart';
+import '../../core/models/word.dart';
 import '../../shared/providers/database_providers.dart';
 
 class WordListScreen extends ConsumerStatefulWidget {
@@ -99,7 +99,7 @@ class _WordTab extends ConsumerWidget {
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           itemCount: filtered.length,
           itemBuilder: (_, i) => _WordCard(word: filtered[i]),
         );
@@ -117,42 +117,109 @@ class _WordCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final statusColor = _statusColor(word.status);
 
     return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _statusColor(word.status).withOpacity(0.15),
-          child: Text(
-            word.word[0].toUpperCase(),
-            style: TextStyle(color: _statusColor(word.status)),
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: cs.outlineVariant.withOpacity(0.5)),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onLongPress: () => _showDeleteDialog(context, ref),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      word.word,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: statusColor.withOpacity(0.35)),
+                    ),
+                    child: Text(
+                      word.status[0].toUpperCase() + word.status.substring(1),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: statusColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+              if (word.pronunciation != null || word.type != null) ...[
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    if (word.pronunciation != null)
+                      Text(
+                        word.pronunciation!,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: cs.primary,
+                            ),
+                      ),
+                    if (word.pronunciation != null && word.type != null)
+                      Text('  ·  ',
+                          style: TextStyle(color: cs.outlineVariant)),
+                    if (word.type != null)
+                      Text(
+                        word.type!,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
+                      ),
+                  ],
+                ),
+              ],
+              if (word.meaning != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  word.meaning!,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+              if (word.usageExample != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  '"${word.usageExample!}"',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontStyle: FontStyle.italic,
+                        color: cs.onSurfaceVariant,
+                      ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              if (word.synonym != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  '≈ ${word.synonym!}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: cs.outline,
+                      ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ],
           ),
         ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(word.word,
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-            ),
-            if (word.type != null)
-              _Badge(label: word.type!, color: cs.secondaryContainer),
-            const SizedBox(width: 4),
-            _Badge(
-              label: word.status,
-              color: _statusColor(word.status).withOpacity(0.15),
-              textColor: _statusColor(word.status),
-            ),
-          ],
-        ),
-        subtitle: word.meaning != null
-            ? Text(
-                word.meaning!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              )
-            : null,
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => context.push('/words/${word.id}'),
-        onLongPress: () => _showDeleteDialog(context, ref),
       ),
     );
   }
@@ -164,15 +231,13 @@ class _WordCard extends ConsumerWidget {
         title: const Text('Delete word?'),
         content: Text('Remove "${word.word}" from your list?'),
         actions: [
-          TextButton(
-              onPressed: () => ctx.pop(false), child: const Text('Cancel')),
-          FilledButton(
-              onPressed: () => ctx.pop(true), child: const Text('Delete')),
+          TextButton(onPressed: () => ctx.pop(false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => ctx.pop(true), child: const Text('Delete')),
         ],
       ),
     );
     if (ok == true) {
-      await ref.read(databaseProvider).wordDao.deleteWord(word.id);
+      await ref.read(storageProvider).deleteWord(word.id);
     }
   }
 
@@ -185,31 +250,6 @@ class _WordCard extends ConsumerWidget {
       default:
         return Colors.orange;
     }
-  }
-}
-
-class _Badge extends StatelessWidget {
-  final String label;
-  final Color color;
-  final Color? textColor;
-
-  const _Badge({required this.label, required this.color, this.textColor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: textColor,
-            ),
-      ),
-    );
   }
 }
 

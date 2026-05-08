@@ -10,6 +10,7 @@ const _kApiKeyKey = 'ai_api_key';
 
 const _storage = FlutterSecureStorage(
   aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  mOptions: MacOsOptions(useDataProtectionKeyChain: false),
 );
 
 class AISettings {

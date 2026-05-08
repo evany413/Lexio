@@ -1,34 +1,29 @@
-import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/database/database.dart';
+import '../../core/database/hive_storage.dart';
+import '../../core/models/word.dart';
 
-final databaseProvider = Provider<AppDatabase>((ref) {
-  final db = AppDatabase();
-  ref.onDispose(db.close);
-  return db;
-});
+final storageProvider = Provider<HiveStorage>((ref) => HiveStorage());
 
 final allWordsProvider = StreamProvider<List<Word>>((ref) {
-  return ref.watch(databaseProvider).wordDao.watchAllWords();
+  return ref.watch(storageProvider).watchAllWords();
 });
 
 final activeWordsProvider = StreamProvider<List<Word>>((ref) {
-  return ref.watch(databaseProvider).wordDao.watchWordsByStatus('active');
+  return ref.watch(storageProvider).watchWordsByStatus('active');
 });
 
 final masteredWordsProvider = StreamProvider<List<Word>>((ref) {
-  return ref.watch(databaseProvider).wordDao.watchWordsByStatus('mastered');
+  return ref.watch(storageProvider).watchWordsByStatus('mastered');
 });
 
 final achievedWordsProvider = StreamProvider<List<Word>>((ref) {
-  return ref.watch(databaseProvider).wordDao.watchWordsByStatus('achieved');
+  return ref.watch(storageProvider).watchWordsByStatus('achieved');
 });
 
 final dueWordsProvider = StreamProvider<List<Word>>((ref) {
-  return ref.watch(databaseProvider).wordDao.watchDueWords();
+  return ref.watch(storageProvider).watchDueWords();
 });
 
-// Derived from the stream so it auto-updates whenever words change
 final wordCountsProvider = Provider<AsyncValue<Map<String, int>>>((ref) {
   return ref.watch(allWordsProvider).whenData((words) => {
         'all': words.length,
@@ -38,26 +33,29 @@ final wordCountsProvider = Provider<AsyncValue<Map<String, int>>>((ref) {
       });
 });
 
-// Invalidation helper — call after any write to refresh counts
-extension RefreshCounts on Ref {
-  void refreshWordData() {
-    invalidate(allWordsProvider);
-    invalidate(activeWordsProvider);
-    invalidate(masteredWordsProvider);
-    invalidate(achievedWordsProvider);
-    invalidate(dueWordsProvider);
-  }
+Future<void> insertWord(
+  dynamic ref, {
+  required String word,
+  String? type,
+  String? pronunciation,
+  String? meaning,
+  String? usageExample,
+  String? synonym,
+  DateTime? nextReviewAt,
+}) async {
+  await ref.read(storageProvider).insertWord(
+        word: word,
+        type: type,
+        pronunciation: pronunciation,
+        meaning: meaning,
+        usageExample: usageExample,
+        synonym: synonym,
+        nextReviewAt: nextReviewAt,
+      );
 }
 
-// Insert a word and refresh all streams
-Future<void> insertWord(WidgetRef ref, WordsCompanion word) async {
-  final dao = ref.read(databaseProvider).wordDao;
-  await dao.insertWord(word);
-}
-
-// Update SRS data after a flashcard review
-Future<void> recordReview(WidgetRef ref, Word word, int quality) async {
-  final dao = ref.read(databaseProvider).wordDao;
+Future<void> recordReview(dynamic ref, Word word, int quality) async {
+  final storage = ref.read(storageProvider) as HiveStorage;
 
   final newEF = (word.easeFactor +
           (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)))
@@ -90,16 +88,13 @@ Future<void> recordReview(WidgetRef ref, Word word, int quality) async {
   final nextReview =
       DateTime.now().add(Duration(hours: (newInterval * 24).round()));
 
-  await dao.updateWord(word.copyWith(
+  await storage.updateWord(word.copyWith(
     easeFactor: newEF,
     intervalDays: newInterval,
     repetitions: newReps,
-    nextReviewAt: Value(nextReview),
+    nextReviewAt: nextReview,
     status: status,
   ));
 
-  await dao.addReview(ReviewLogsCompanion(
-    wordId: Value(word.id),
-    quality: Value(quality),
-  ));
+  await storage.addReview(wordId: word.id, quality: quality);
 }
