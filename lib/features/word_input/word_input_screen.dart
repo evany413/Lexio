@@ -34,6 +34,7 @@ class _WordInputScreenState extends ConsumerState<WordInputScreen> {
       return;
     }
 
+    FocusScope.of(context).unfocus();
     setState(() {
       _analyzing = true;
       _suggestions = [];
@@ -63,6 +64,7 @@ class _WordInputScreenState extends ConsumerState<WordInputScreen> {
     final ai = ref.read(aiServiceProvider);
     if (ai == null) return;
 
+    FocusScope.of(context).unfocus();
     setState(() => _enriching = true);
 
     int added = 0;

@@ -93,6 +93,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
 
   void _submitType() {
     if (_answered) return;
+    FocusScope.of(context).unfocus();
     final input = _typeController.text.trim().toLowerCase();
     final correct =
         input == _questions[_current].answer.toLowerCase();
@@ -103,6 +104,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   }
 
   void _next() {
+    FocusScope.of(context).unfocus();
     if (_current + 1 >= _questions.length) {
       setState(() => _done = true);
     } else {

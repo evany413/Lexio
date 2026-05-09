@@ -34,6 +34,11 @@ class LexioApp extends ConsumerWidget {
       ),
       routerConfig: router,
       debugShowCheckedModeBanner: false,
+      builder: (context, child) => GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        behavior: HitTestBehavior.opaque,
+        child: child,
+      ),
     );
   }
 }

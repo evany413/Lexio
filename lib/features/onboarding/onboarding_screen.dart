@@ -34,6 +34,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       return;
     }
 
+    FocusScope.of(context).unfocus();
     setState(() {
       _testing = true;
       _errorMessage = null;
