@@ -35,11 +35,6 @@ migrate_working_dir/
 /coverage/
 
 # Flutter generated files
-**/Flutter/Flutter-Debug.xcconfig
-**/Flutter/Flutter-Release.xcconfig
-**/Flutter/Debug.xcconfig
-**/Flutter/Release.xcconfig
-**/Flutter/GeneratedPluginRegistrant.swift
 **/flutter/generated_plugin_registrant.cc
 **/flutter/generated_plugin_registrant.h
 **/flutter/generated_plugins.cmake
