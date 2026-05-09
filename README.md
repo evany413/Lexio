@@ -5,7 +5,7 @@ An AI-powered English vocabulary learning app built with Flutter. Paste any text
 ## Features
 
 - **AI Word Extraction** — paste a paragraph and AI picks 5–10 words worth learning
-- **Word Management** — view, edit, and organize words with status: Active / Mastered / Achieved
+- **Word Management** — view and organize words with status: Active / Mastered / Achieved
 - **Flashcards (SRS)** — spaced repetition using the SM-2 algorithm (same as Anki)
 - **Quiz** — multiple choice and type-the-word modes
 - **CSV Import / Export** — fields: word, type, pronunciation, meaning, usage example, synonym, status
@@ -18,7 +18,7 @@ An AI-powered English vocabulary learning app built with Flutter. Paste any text
 |---|---|
 | Framework | Flutter / Dart |
 | State management | Riverpod |
-| Database | Drift (SQLite) |
+| Database | Hive (NoSQL, works on all platforms including Web) |
 | Navigation | GoRouter |
 | HTTP | Dio |
 | AI (Gemini) | google_generative_ai |
@@ -35,41 +35,14 @@ An AI-powered English vocabulary learning app built with Flutter. Paste any text
   - [OpenAI](https://platform.openai.com) — starts with `sk-`
   - [Google AI Studio](https://aistudio.google.com) — starts with `AIza` (free tier available)
 
-### Install dependencies
+### Install & run
 
 ```bash
 flutter pub get
-dart run build_runner build
-```
-
-### Web setup (Chrome only)
-
-Download the SQLite WASM binary into the `web/` folder:
-
-```bash
-# Windows (PowerShell)
-Invoke-WebRequest -Uri "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.wasm" -OutFile "web/sql-wasm.wasm"
-
-# macOS / Linux
-curl -L "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.wasm" -o web/sql-wasm.wasm
-```
-
-### Run
-
-```bash
-# Windows desktop (requires Visual Studio with "Desktop development with C++" workload)
-flutter run -d windows
-
-# Chrome
-flutter run -d chrome
-
-# List all available devices
 flutter run
 ```
 
-### Windows desktop note
-
-Windows desktop requires [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/) with the **Desktop development with C++** workload installed. Also enable **Developer Mode** in Windows Settings → Privacy & Security → For Developers.
+No code generation step needed — Hive is used without adapters.
 
 ## Word Status Flow
 
@@ -80,8 +53,6 @@ Active  →  Mastered  →  Achieved
 (< 21 days)  (21–90 days)  (> 90 days interval)
 ```
 
-You can also change the status manually on the word detail screen.
-
 ## API Keys
 
 API keys are stored in the OS secure keychain (Windows Credential Manager, macOS Keychain, etc.) using `flutter_secure_storage`. They are never written to disk in plain text and never included in the codebase.
@@ -91,7 +62,8 @@ API keys are stored in the OS secure keychain (Windows Credential Manager, macOS
 ```
 lib/
 ├── core/
-│   ├── database/        # Drift tables, database, DAOs
+│   ├── database/        # Hive storage layer
+│   ├── models/          # Plain Dart data models
 │   ├── services/ai/     # Anthropic, OpenAI, Gemini implementations
 │   ├── services/        # SRS algorithm, CSV service
 │   └── router/          # GoRouter configuration
@@ -99,8 +71,7 @@ lib/
 │   ├── onboarding/      # API key setup
 │   ├── dashboard/       # Home screen with stats
 │   ├── word_input/      # AI text analysis
-│   ├── word_list/       # Word list with filters
-│   ├── word_detail/     # View and edit a word
+│   ├── word_list/       # Word list with filters and expanded cards
 │   ├── flashcard/       # SRS flashcard session
 │   ├── quiz/            # Quiz modes
 │   └── settings/        # App settings, import/export
